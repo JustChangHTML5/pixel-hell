@@ -1,5 +1,26 @@
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
+var map = document.getElementById("map");
+
+
+function loadFile(file)
+{
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function ()
+    {
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                var allText = rawFile.responseText;
+                map.innerHTML = allText;
+            }
+        }
+    }
+    rawFile.send(null);
+}
+
 
 class Player {
     constructor(skin, stats) {
@@ -12,28 +33,15 @@ class Player {
     }
 
     loadIntoGame(map) {
-        const fs = require('fs')
-
-        fs.readFile("game/levels/earth.txt", (err, data) => {
-            if (err) throw err;
-          
-            console.log(data.toString());
-        })
+        loadFile("game/levels/earth.txt");
+        const mapData = map.innerHTML;
+        for (var i = 0; i < mapData.length; i++) {
+            if (mapData[i] = ":") {
+                
+            }
+        }
     }
 }
 
-let player = new Player("game/sprites/gamemakor.JPG", [10, 10]);
-player.loadIntoGame();
-
-function loadFile() {
-    reader.open('get', 'test.txt', true); 
-    reader.onreadystatechange = displayContents;
-    reader.send(null);
-}
-
-function displayContents() {
-    if(reader.readyState==4) {
-        var el = document.getElementById('main');
-        el.innerHTML = reader.responseText;
-    }
-}
+//let player = new Player("game/sprites/gamemakor.JPG", [10, 10]);
+//player.loadIntoGame();
