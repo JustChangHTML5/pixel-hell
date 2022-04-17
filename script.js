@@ -94,7 +94,7 @@ class Player {
             let image = new Image();
             image.src = curPath;
             image.onload = function() {
-                console.log()
+                ctx.drawImage(image, 100, 100, 16, 32);
             }
             imageList.push(image);
         }
@@ -136,4 +136,4 @@ function main() {
     canvas.height = window.innerHeight;
 }
 
-var gameLoop = setInterval(main, 10);
+main()
