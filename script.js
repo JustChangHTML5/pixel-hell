@@ -4,7 +4,9 @@ var map = document.getElementById("map");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+ctx.imageSmoothingEnabled = false;
 
+var loaded = false;
 var curMousePos = [0, 0];
 
 document.onmousemove = handleMouseMove;
@@ -29,7 +31,7 @@ function handleMouseMove(event) {
           (doc && doc.clientTop  || body && body.clientTop  || 0 );
     }
 
-    curMousePos = [event.clientX, event.clientX]
+    curMousePos = [event.clientX, event.clientY]
 }
 
 function loadFile(file)
@@ -50,20 +52,46 @@ function loadFile(file)
     rawFile.send(null);
 }
 
-
-class Player {
-    constructor(skin, stats, skinSpeed) {
+class Bullet {
+    constructor(skin, skinData, stats, skinSpeed) {
+        this.sprites = [];
         this.skin = skin;
-        this.sprites = this.loadImages(skin);
+        this.loadImages(skin);
         this.curImageNum = 0;
-        this.curImage = this.sprites[this.curImageNum];
+        this.curImage = this.sprites[0];
+        this.skinData = skinData
         this.stats = stats;
-        this.pos = [];
+        this.pos = [0, 0];
         this.vel = [];
         this.frameRate = skinSpeed;
         this.maxFrames = skinSpeed;
+        this.loaded = false;
     }
+}
 
+class Player {
+    constructor(skin, skinData, stats, skinSpeed) {
+        this.sprites = [];
+        this.skin = skin;
+        this.loadImages(skin);
+        this.curImageNum = 0;
+        this.curImage = this.sprites[0];
+        this.skinData = skinData
+        this.stats = stats;
+        this.pos = [0, 0];
+        this.vel = [];
+        this.frameRate = skinSpeed;
+        this.maxFrames = skinSpeed;
+        this.loaded = false;
+    }
+    
+    loadImage(url) {
+        let l = new Image();
+        l.src = url
+
+        return l;
+    }
+    
     loadIntoGame(map) {
         loadFile("game/levels/earth.txt");
         const mapData = map.innerHTML;
@@ -88,31 +116,23 @@ class Player {
     }
 
     loadImages(paths) {
-        var imageList = [];
         for (var i = 0; i < paths.length; i++) {
             var curPath = paths[i];
-            let image = new Image();
-            image.src = curPath;
-            image.onload = function() {
-                ctx.drawImage(image, 100, 100, 16, 32);
-            }
-            imageList.push(image);
+            var image = this.loadImage(curPath);
+            this.sprites.push(image);
         }
-
-        return imageList;
     }
 
     draw(pos) {
-        let image = new Image();
-        image.src = "/game/sprites/spaceship0.png";
-        image.onload = function() {
-            //ctx.drawImage(image, 100, 100, 100, 200);
-        }
-        ctx.drawImage(this.curImage, 100, 100, 32, 64);
+        ctx.drawImage(this.curImage, this.pos[0] - this.skinData[0] / 2, this.pos[1] - this.skinData[1] / 2, this.skinData[0], this.skinData[1]);
+        this.loaded = true;
+        //ctx.drawImage(img, 100, 100, 100, 100);
     }
     
 
-    update() {
+    update(pos) {
+        this.pos[0] += (pos[0] - this.pos[0]) / this.stats[0];
+        this.pos[1] += (pos[1] - this.pos[1]) / this.stats[0];
         if (this.frameRate <= 0) {
             this.frameRate = this.maxFrames;
             this.curImageNum++;
@@ -120,20 +140,26 @@ class Player {
         } else {
             this.frameRate--;
         }
+        this.pos[0] = Math.round(this.pos[0] / this.stats[1]) * this.stats[1];
+        this.pos[1] = Math.round(this.pos[1] / this.stats[1]) * this.stats[1];
     }
 }
 
 //let player = new Player("game/sprites/gamemakor.JPG", [10, 10]);
 //player.loadIntoGame();
 
-let player = new Player(["/game/sprites/spaceship0.png", "/game/sprites/spaceship1.png", "/game/sprites/spaceship2.png"], [10, 10, 10], 20);
+let player = new Player(["/game/sprites/spaceships/spaceshipA/spaceship0.png", "/game/sprites/spaceships/spaceshipA/spaceship1.png", "/game/sprites/spaceships/spaceshipA/spaceship2.png"], [32, 64], [10, 0.25, 10], 20);
 
 function main() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    player.draw(curMousePos);
-    player.update()
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    player.draw();
+    player.update(curMousePos);
+    //canvas.width = window.innerWidth;
+    //canvas.height = window.innerHeight;
+    if (player.loaded) {
+        player.loaded = false;
+    }
+    window.requestAnimationFrame(main)
 }
 
 main()
