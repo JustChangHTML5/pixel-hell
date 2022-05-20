@@ -100,8 +100,54 @@ function loadFile(file) {
     rawFile.send(null);
 }
 
+class Map {
+    constructor(stats, updateSpeed, skins) {
+        this.stats = stats;
+        this.bullets = [];
+        this.updateSpeed = updateSpeed;
+        this.skins = skins;
+    }
+
+    calcBullets() {
+        for (var i = 0; i < this.bullets.length; i++) {
+            var curBullet = this.bullets[i];
+            curBullet.update();
+            curBullet.draw();
+            const playerHitbox = [player.skinData[0]*2/3, player.skinData[1]*2/3];
+            if (curBullet.pos[0] >= player.pos[0] - playerHitbox[0] && curBullet.pos[0] <= player.pos[0] + playerHitbox[0]) {
+                if (curBullet.pos[1] >= player.pos[1] - playerHitbox[1] && curBullet.pos[1] <= player.pos[1] + playerHitbox[1]) {
+                    player.hp -= curBullet.damage;
+                    curBullet.stopExisting();
+                }
+            }
+        }
+    }
+
+    findPosAngle2becauseIamtoolazytomakeituseful(pos, pos0) {
+        /*const angleX = this.pos[0] - pos[0];
+        const angleY = this.pos[1] - pos[1];
+        const whole = Math.abs(angleX) + Math.abs(angleY)
+        const circle = 1 / Math.dist(0, 0, angleX / whole, angleY / whole);*/
+        return angle(pos0[0], pos0[1], pos[0], pos[1]) + 90;
+
+    }
+    
+    shoot(pos) {
+        const angleX = 10 - pos[0];
+        const angleY = 10 - pos[1];
+        const whole = Math.abs(angleX) + Math.abs(angleY)
+        const circle = 1 / Math.dist(0, 0, angleX / whole, angleY / whole);
+        let curBullet = new Bullet(["/game/sprites/bullets/enemyBullets/bulletA/bullet0.png", "/game/sprites/bullets/enemyBullets/bulletA/bullet1.png", "/game/sprites/bullets/enemyBullets/bulletA/bullet2.png"], [16, 16], [10], 10, [-angleX / whole * circle * 10, -angleY / whole * circle * 10], [10, 10], this, this.findPosAngle2becauseIamtoolazytomakeituseful(pos, [10, 10]), 10);
+        this.bullets.push(curBullet);
+    }
+
+    update() {
+        this.shoot([player.pos[0], player.pos[1]]);
+    }
+}
+
 class Bullet {
-    constructor(skin, skinData, stats, skinSpeed, velocity, startPos, parent, direction) {
+    constructor(skin, skinData, stats, skinSpeed, velocity, startPos, parent, direction, damage) {
         this.sprites = [];
         this.skin = skin;
         this.loadImages(skin);
@@ -117,6 +163,7 @@ class Bullet {
         this.loaded = false;
         this.destroyed = false;
         this.parent = parent;
+        this.damage = damage;
     }
 
     loadImage(url) {
@@ -164,6 +211,10 @@ class Bullet {
             this.destroyed = true;
         }
     }
+
+    stopExisting() {
+        this.parent.bullets.splice(this.parent.bullets.indexOf(this), 1);
+    }
 }
 
 class Player {
@@ -183,6 +234,7 @@ class Player {
         this.bullets = [];
         this.bulletSkins = bulletSkins;
         this.bulletSpeed = bulletSpeed;
+        this.hp = stats[6];
     }
 
     loadImage(url) {
@@ -251,7 +303,7 @@ class Player {
         const angleY = this.pos[1] - pos[1];
         const whole = Math.abs(angleX) + Math.abs(angleY)
         const circle = 1 / Math.dist(0, 0, angleX / whole, angleY / whole);
-        let curBullet = new Bullet(this.bulletSkins, [this.stats[3], this.stats[4]], this.stats[2], this.stats[5], [-angleX / whole * circle * this.bulletSpeed, -angleY / whole * circle * this.bulletSpeed], [this.pos[0], this.pos[1]], this, this.findPosAngle2becauseIamtoolazytomakeituseful(pos));
+        let curBullet = new Bullet(this.bulletSkins, [this.stats[3], this.stats[4]], this.stats[2], this.stats[5], [-angleX / whole * circle * this.bulletSpeed, -angleY / whole * circle * this.bulletSpeed], [this.pos[0], this.pos[1]], this, this.findPosAngle2becauseIamtoolazytomakeituseful(pos), this.stats[7]);
         this.bullets.push(curBullet);
     }
 
@@ -270,7 +322,9 @@ class Player {
 //let player = new Player("game/sprites/gamemakor.JPG", [10, 10]);
 //player.loadIntoGame();
 
-let player = new Player(["/game/sprites/spaceships/spaceshipA/spaceship0.png", "/game/sprites/spaceships/spaceshipA/spaceship1.png", "/game/sprites/spaceships/spaceshipA/spaceship2.png"], [32, 64], [10, 0.25, 4, 8, 16, 10], 20, ["game/sprites/bullets/playerBullets/bulletA/bulletshoot0.png", "game/sprites/bullets/playerBullets/bulletA/bulletshoot1.png"], 10);
+let player = new Player(["/game/sprites/spaceships/spaceshipA/spaceship0.png", "/game/sprites/spaceships/spaceshipA/spaceship1.png", "/game/sprites/spaceships/spaceshipA/spaceship2.png"], [32, 64], [10, 0.25, 4, 8, 16, 10, 100, 5], 20, ["game/sprites/bullets/playerBullets/bulletA/bulletshoot0.png", "game/sprites/bullets/playerBullets/bulletA/bulletshoot1.png"], 10);
+let gameMap = new Map(0, 0, 0);
+
 function main() {
     gameMusic.play();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -278,11 +332,15 @@ function main() {
     player.findPosAngle(curMousePos);
     player.update(curMousePos);
     player.updateBullets();
+    gameMap.update();
+    gameMap.calcBullets();
     //canvas.width = window.innerWidth;
     //canvas.height = window.innerHeight;
     if (player.loaded) {
         player.loaded = false;
     }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     window.requestAnimationFrame(main);
 }
 
