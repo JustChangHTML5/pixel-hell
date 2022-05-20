@@ -339,8 +339,6 @@ function main() {
     if (player.loaded) {
         player.loaded = false;
     }
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
     window.requestAnimationFrame(main);
 }
 
